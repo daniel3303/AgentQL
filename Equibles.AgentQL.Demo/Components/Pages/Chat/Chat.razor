@@ -1,0 +1,95 @@
+@page "/"
+@inject IChatClient ChatClient
+@inject NavigationManager Nav
+@inject AgentQLPlugin Plugin
+@inject AgentQLChatOptions ChatConfig
+@implements IDisposable
+
+@using Equibles.AgentQL.MicrosoftAI
+@using Equibles.AgentQL.MicrosoftAI.Configuration
+
+<PageTitle>Chat</PageTitle>
+
+<ChatHeader OnNewChat="@ResetConversationAsync" />
+
+<ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
+    <NoMessagesContent>
+        <div>Ask questions about the travel agency database — bookings, customers, destinations, and payments.</div>
+    </NoMessagesContent>
+</ChatMessageList>
+
+<div class="chat-container">
+    <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
+</div>
+
+@code {
+    private int statefulMessageCount;
+    private readonly ChatOptions chatOptions = new();
+    private readonly List<ChatMessage> messages = new();
+    private CancellationTokenSource currentResponseCancellation;
+    private ChatMessage currentResponseMessage;
+    private ChatInput chatInput;
+
+    protected override void OnInitialized()
+    {
+        statefulMessageCount = 0;
+        messages.Add(new(ChatRole.System, ChatConfig.SystemPrompt));
+        chatOptions.Tools = [
+            AIFunctionFactory.Create(Plugin.GetDatabaseSchema, nameof(Plugin.GetDatabaseSchema)),
+            AIFunctionFactory.Create(Plugin.ExecuteQuery, nameof(Plugin.ExecuteQuery)),
+            AIFunctionFactory.Create(Plugin.ReportFailure, nameof(Plugin.ReportFailure)),
+        ];
+    }
+
+    private async Task AddUserMessageAsync(ChatMessage userMessage)
+    {
+        CancelAnyCurrentResponse();
+
+        // Add the user message to the conversation
+        messages.Add(userMessage);
+        await chatInput!.FocusAsync();
+
+        // Stream and display a new response from the IChatClient
+        var responseText = new TextContent("");
+        currentResponseMessage = new ChatMessage(ChatRole.Assistant, [responseText]);
+        currentResponseCancellation = new();
+        await foreach (var update in ChatClient.GetStreamingResponseAsync(messages.Skip(statefulMessageCount), chatOptions, currentResponseCancellation.Token))
+        {
+            messages.AddMessages(update, filter: c => c is not TextContent);
+            responseText.Text += update.Text;
+            chatOptions.ConversationId = update.ConversationId;
+            ChatMessageItem.NotifyChanged(currentResponseMessage);
+            StateHasChanged();
+        }
+
+        // Store the final response in the conversation
+        messages.Add(currentResponseMessage!);
+        statefulMessageCount = chatOptions.ConversationId is not null ? messages.Count : 0;
+        currentResponseMessage = null;
+    }
+
+    private void CancelAnyCurrentResponse()
+    {
+        // If a response was cancelled while streaming, include it in the conversation so it's not lost
+        if (currentResponseMessage is not null)
+        {
+            messages.Add(currentResponseMessage);
+        }
+
+        currentResponseCancellation?.Cancel();
+        currentResponseMessage = null;
+    }
+
+    private async Task ResetConversationAsync()
+    {
+        CancelAnyCurrentResponse();
+        messages.Clear();
+        messages.Add(new(ChatRole.System, ChatConfig.SystemPrompt));
+        chatOptions.ConversationId = null;
+        statefulMessageCount = 0;
+        await chatInput!.FocusAsync();
+    }
+
+    public void Dispose()
+        => currentResponseCancellation?.Cancel();
+}
