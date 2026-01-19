@@ -15,6 +15,12 @@
 <ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
     <NoMessagesContent>
         <div>Ask questions about the travel agency database — bookings, customers, destinations, and payments.</div>
+        <div class="suggestions">
+            @foreach (var suggestion in suggestions)
+            {
+                <button class="suggestion-chip" @onclick="() => AddUserMessageAsync(new ChatMessage(ChatRole.User, suggestion))">@suggestion</button>
+            }
+        </div>
     </NoMessagesContent>
 </ChatMessageList>
 
@@ -23,6 +29,14 @@
 </div>
 
 @code {
+    private static readonly string[] suggestions =
+    [
+        "Which destinations have the most bookings?",
+        "Show me all customers with Gold or Platinum loyalty tier",
+        "What is the total revenue by destination?",
+        "List recent bookings with customer and destination details",
+    ];
+
     private int statefulMessageCount;
     private readonly ChatOptions chatOptions = new();
     private readonly List<ChatMessage> messages = new();

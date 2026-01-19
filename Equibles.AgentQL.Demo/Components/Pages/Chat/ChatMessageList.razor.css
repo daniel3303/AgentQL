@@ -20,3 +20,27 @@ chat-messages > ::deep div:last-of-type {
     /* Adds some vertical buffer so content doesn't overlap the input */
     margin-bottom: 2rem;
 }
+
+::deep .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+}
+
+::deep .suggestion-chip {
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+::deep .suggestion-chip:hover {
+    background: #e0e0e0;
+    border-color: #bbb;
+}
