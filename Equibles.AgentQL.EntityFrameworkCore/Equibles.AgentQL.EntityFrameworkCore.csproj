@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Equibles.AgentQL.EntityFrameworkCore</RootNamespace>
+    <PackageId>Equibles.AgentQL.EntityFrameworkCore</PackageId>
+    <Description>EF Core integration for AgentQL — schema introspection and safe SQL query execution for LLM agents.</Description>
   </PropertyGroup>
 
   <ItemGroup>

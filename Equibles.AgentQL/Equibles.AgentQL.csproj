@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Equibles.AgentQL</RootNamespace>
+    <PackageId>Equibles.AgentQL</PackageId>
+    <Description>Core attributes and configuration for AgentQL — translates EF Core models into LLM-friendly schema descriptions.</Description>
   </PropertyGroup>
 
   <ItemGroup>
