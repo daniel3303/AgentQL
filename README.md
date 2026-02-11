@@ -1,6 +1,4 @@
-# Equibles.AgentQL
-
-![Demo screenshot](assets/demo-screenshot.png)
+# AgentQL
 
 Reusable .NET library that translates EF Core `DbContext` models into LLM-friendly schema descriptions and provides safe SQL query execution. Enables LLMs to understand your database structure and query it via function calling.
 
@@ -290,6 +288,10 @@ Open `http://localhost:5143` in your browser. Configure your AI provider in `Equ
   }
 }
 ```
+
+## Demo
+
+![Demo screenshot](assets/demo-screenshot.png)
 
 ## License
 
