@@ -1,5 +1,7 @@
 # Equibles.AgentQL
 
+![Demo screenshot](assets/demo-screenshot.png)
+
 Reusable .NET library that translates EF Core `DbContext` models into LLM-friendly schema descriptions and provides safe SQL query execution. Enables LLMs to understand your database structure and query it via function calling.
 
 ## Overview
@@ -9,15 +11,6 @@ AgentQL sits between your EF Core database and any AI provider (OpenAI, Anthropi
 1. **Introspects** your EF Core model — tables, columns, types, relationships, enums, inheritance — and produces a text description the LLM can reason about.
 2. **Executes** SQL queries safely inside transactions with configurable row limits, timeouts, and read-only enforcement.
 3. **Exposes** three LLM tool functions (`GetDatabaseSchema`, `ExecuteQuery`, `ReportFailure`) through [Microsoft.Extensions.AI](https://learn.microsoft.com/en-us/dotnet/ai/ai-extensions), so any compatible chat client can call them automatically.
-
-### Solution structure
-
-```
-Equibles.AgentQL                        — Core: attributes, configuration, models (no EF Core dependency)
-├── Equibles.AgentQL.EntityFrameworkCore — EF Core integration: schema introspection + query execution
-│   └── Equibles.AgentQL.MicrosoftAI    — AI provider bridge (OpenAI, Anthropic, Ollama) via Microsoft.Extensions.AI
-└── Equibles.AgentQL.Demo               — Blazor Interactive Server demo app (travel agency chat UI)
-```
 
 ## Getting Started
 
