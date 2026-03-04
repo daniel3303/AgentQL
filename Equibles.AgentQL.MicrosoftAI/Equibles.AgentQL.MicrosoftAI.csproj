@@ -4,6 +4,8 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>Equibles.AgentQL.MicrosoftAI</RootNamespace>
+        <PackageId>Equibles.AgentQL.MicrosoftAI</PackageId>
+        <Description>Microsoft.Extensions.AI bridge for AgentQL — exposes database schema and query tools as LLM function calls.</Description>
     </PropertyGroup>
 
     <ItemGroup>
