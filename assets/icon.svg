@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="128" height="128" rx="24" fill="url(#bg)"/>
+
+  <!-- Database cylinder (top) -->
+  <ellipse cx="50" cy="42" rx="22" ry="8" fill="none" stroke="#fff" stroke-width="3"/>
+  <path d="M28 42 v24 c0 4.4 9.8 8 22 8 s22-3.6 22-8 V42" fill="none" stroke="#fff" stroke-width="3"/>
+  <ellipse cx="50" cy="42" rx="22" ry="8" fill="#fff" opacity="0.15"/>
+
+  <!-- Middle line on cylinder -->
+  <path d="M28 54 c0 4.4 9.8 8 22 8 s22-3.6 22-8" fill="none" stroke="#fff" stroke-width="2" opacity="0.5"/>
+
+  <!-- Lightning bolt / query symbol -->
+  <path d="M82 38 L74 58 h10 L76 78" fill="none" stroke="#fbbf24" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Dot accents -->
+  <circle cx="92" cy="48" r="3" fill="#fbbf24" opacity="0.7"/>
+  <circle cx="96" cy="62" r="2" fill="#fbbf24" opacity="0.5"/>
+
+  <!-- "QL" text -->
+  <text x="64" y="108" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="22" fill="#fff" letter-spacing="2">AgentQL</text>
+</svg>
