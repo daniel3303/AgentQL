@@ -10,15 +10,32 @@ AgentQL sits between your EF Core database and any AI provider (OpenAI, Anthropi
 2. **Executes** SQL queries safely inside transactions with configurable row limits, timeouts, and read-only enforcement.
 3. **Exposes** three LLM tool functions (`GetDatabaseSchema`, `ExecuteQuery`, `ReportFailure`) through [Microsoft.Extensions.AI](https://learn.microsoft.com/en-us/dotnet/ai/ai-extensions), so any compatible chat client can call them automatically.
 
-## Getting Started
+## Packages
 
-Install the NuGet packages:
+| Package | Description | NuGet |
+|---------|-------------|-------|
+| [Equibles.AgentQL](https://www.nuget.org/packages/Equibles.AgentQL) | Core attributes and configuration | [![NuGet](https://img.shields.io/nuget/v/Equibles.AgentQL)](https://www.nuget.org/packages/Equibles.AgentQL) |
+| [Equibles.AgentQL.EntityFrameworkCore](https://www.nuget.org/packages/Equibles.AgentQL.EntityFrameworkCore) | EF Core schema introspection + query execution | [![NuGet](https://img.shields.io/nuget/v/Equibles.AgentQL.EntityFrameworkCore)](https://www.nuget.org/packages/Equibles.AgentQL.EntityFrameworkCore) |
+| [Equibles.AgentQL.MicrosoftAI](https://www.nuget.org/packages/Equibles.AgentQL.MicrosoftAI) | AI provider bridge (OpenAI, Anthropic, Ollama) | [![NuGet](https://img.shields.io/nuget/v/Equibles.AgentQL.MicrosoftAI)](https://www.nuget.org/packages/Equibles.AgentQL.MicrosoftAI) |
+
+## Installation
+
+Pick the package that matches your needs:
 
 ```bash
-dotnet add package Equibles.AgentQL.MicrosoftAI        # Includes Core + EF Core
-# — or, if you don't need the AI layer —
-dotnet add package Equibles.AgentQL.EntityFrameworkCore  # Schema + query only
+# Full stack — schema + query + AI chat client (includes all dependencies)
+dotnet add package Equibles.AgentQL.MicrosoftAI
+
+# Schema introspection + query execution only (bring your own AI client)
+dotnet add package Equibles.AgentQL.EntityFrameworkCore
+
+# Core only — just the attributes and configuration (for shared model projects)
+dotnet add package Equibles.AgentQL
 ```
+
+Each package pulls in its dependencies automatically — `MicrosoftAI` includes `EntityFrameworkCore`, which includes `Core`.
+
+## Getting Started
 
 Minimal setup:
 
