@@ -1,0 +1,9 @@
+# Build output
+bin/
+obj/
+
+# Local git worktrees
+worktrees/
+
+# Generated migrations
+**/Migrations/
