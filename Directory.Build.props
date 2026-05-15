@@ -1,5 +1,4 @@
 <Project>
-
   <!-- Repo-wide metadata. Packaging concerns live in src/Directory.Build.props
        so they never leak onto test projects. -->
   <PropertyGroup>
@@ -13,5 +12,4 @@
     <PackageTags>efcore llm ai sql schema agent</PackageTags>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
-
 </Project>
