@@ -291,10 +291,10 @@ Available environment variables:
 The included demo is a Blazor Interactive Server app simulating a travel agency chat interface. It uses a SQLite database (`travel.db`) that auto-seeds on first run.
 
 ```bash
-dotnet run --project Equibles.AgentQL.Demo
+dotnet run --project src/Equibles.AgentQL.Demo
 ```
 
-Open `http://localhost:5143` in your browser. Configure your AI provider in `Equibles.AgentQL.Demo/appsettings.json`:
+Open `http://localhost:5143` in your browser. Configure your AI provider in `src/Equibles.AgentQL.Demo/appsettings.json`:
 
 ```json
 {
@@ -304,6 +304,30 @@ Open `http://localhost:5143` in your browser. Configure your AI provider in `Equ
     "ModelName": "gpt-4o"
   }
 }
+```
+
+## Repository Layout
+
+```
+src/    Equibles.AgentQL, .EntityFrameworkCore, .MicrosoftAI, .Demo
+tests/  Equibles.AgentQL.UnitTests, Equibles.AgentQL.IntegrationTests
+```
+
+## Testing
+
+The solution uses xUnit v3 on the Microsoft Testing Platform (opted in via `global.json`).
+
+```bash
+# Fast, no dependencies — pure logic
+dotnet test --project tests/Equibles.AgentQL.UnitTests/Equibles.AgentQL.UnitTests.csproj
+
+# Schema introspection + query execution against a real PostgreSQL
+# instance (Testcontainers — requires Docker running), plus the
+# end-to-end LLM tool loop driven by a fake IChatClient
+dotnet test --project tests/Equibles.AgentQL.IntegrationTests/Equibles.AgentQL.IntegrationTests.csproj
+
+# Everything
+dotnet test
 ```
 
 ## Demo
