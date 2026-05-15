@@ -12,15 +12,16 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY *.sln ./
-COPY Equibles.AgentQL/*.csproj Equibles.AgentQL/
-COPY Equibles.AgentQL.EntityFrameworkCore/*.csproj Equibles.AgentQL.EntityFrameworkCore/
-COPY Equibles.AgentQL.MicrosoftAI/*.csproj Equibles.AgentQL.MicrosoftAI/
-COPY Equibles.AgentQL.Demo/*.csproj Equibles.AgentQL.Demo/
-RUN dotnet restore
+COPY *.sln global.json Directory.Build.props Directory.Packages.props ./
+COPY src/Directory.Build.props src/
+COPY src/Equibles.AgentQL/*.csproj src/Equibles.AgentQL/
+COPY src/Equibles.AgentQL.EntityFrameworkCore/*.csproj src/Equibles.AgentQL.EntityFrameworkCore/
+COPY src/Equibles.AgentQL.MicrosoftAI/*.csproj src/Equibles.AgentQL.MicrosoftAI/
+COPY src/Equibles.AgentQL.Demo/*.csproj src/Equibles.AgentQL.Demo/
+RUN dotnet restore src/Equibles.AgentQL.Demo/Equibles.AgentQL.Demo.csproj
 
 COPY . .
-RUN dotnet publish Equibles.AgentQL.Demo -c Release -o /app/publish
+RUN dotnet publish src/Equibles.AgentQL.Demo -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app

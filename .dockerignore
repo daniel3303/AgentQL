@@ -1,0 +1,11 @@
+# The Docker image only builds/publishes the Demo app — keep the build
+# context minimal and reproducible.
+tests/
+**/bin/
+**/obj/
+**/*.db
+.git/
+.idea/
+.claude/
+worktrees/
+dotnet-tools.json
