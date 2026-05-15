@@ -1,5 +1,7 @@
 <Project>
 
+  <!-- Repo-wide metadata. Packaging concerns live in src/Directory.Build.props
+       so they never leak onto test projects. -->
   <PropertyGroup>
     <Version>0.1.0</Version>
     <Authors>Equibles, Daniel Oliveira</Authors>
@@ -8,15 +10,8 @@
     <PackageProjectUrl>https://danielapoliveira.com/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/daniel3303/AgentQL</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageIcon>icon.png</PackageIcon>
     <PackageTags>efcore llm ai sql schema agent</PackageTags>
-    <IsPackable>true</IsPackable>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
-    <None Include="$(MSBuildThisFileDirectory)assets/icon.png" Pack="true" PackagePath="\" />
-  </ItemGroup>
 
 </Project>
