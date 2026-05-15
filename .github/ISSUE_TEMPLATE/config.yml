@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/daniel3303/AgentQL/security/advisories/new
+    about: Report security issues privately — do not open a public issue.
+  - name: EF Core questions
+    url: https://github.com/dotnet/efcore/issues
+    about: Questions about EF Core itself belong upstream.
+  - name: Microsoft.Extensions.AI questions
+    url: https://github.com/dotnet/extensions/issues
+    about: Questions about the AI abstractions belong upstream.
