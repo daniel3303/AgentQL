@@ -54,4 +54,15 @@ jobs:
         run: dotnet build -c Release --no-restore
 
       - name: Test
-        run: dotnet test --solution Equibles.AgentQL.sln -c Release --no-build
+        run: >-
+          dotnet test --solution Equibles.AgentQL.sln -c Release --no-build
+          -- --coverage --coverage-output-format cobertura
+          --coverage-output coverage.cobertura.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: tests/**/TestResults/coverage.cobertura.xml
+          disable_search: true
+          fail_ci_if_error: false
