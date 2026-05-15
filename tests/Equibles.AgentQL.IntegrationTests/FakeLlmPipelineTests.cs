@@ -21,16 +21,15 @@ namespace Equibles.AgentQL.IntegrationTests;
 /// result is fed back to the model.
 /// </summary>
 [Collection(nameof(PostgresCollection))]
-public class FakeLlmPipelineTests
+public class FakeLlmPipelineTests : IntegrationTestBase
 {
-    private readonly PostgresFixture _fixture;
-
-    public FakeLlmPipelineTests(PostgresFixture fixture) => _fixture = fixture;
+    public FakeLlmPipelineTests(PostgresFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task Pipeline_ModelRequestsExecuteQuery_RunsSqlAndFeedsResultBack()
     {
-        await using var context = _fixture.CreateContext();
+        await using var context = Fixture.CreateContext();
         var plugin = new AgentQLPlugin(
             new SchemaProvider<TravelTestDbContext>(context, new AgentQLOptions()),
             new QueryExecutor<TravelTestDbContext>(
