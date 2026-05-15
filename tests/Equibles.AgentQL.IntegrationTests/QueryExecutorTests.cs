@@ -8,11 +8,10 @@ using Xunit;
 namespace Equibles.AgentQL.IntegrationTests;
 
 [Collection(nameof(PostgresCollection))]
-public class QueryExecutorTests
+public class QueryExecutorTests : IntegrationTestBase
 {
-    private readonly PostgresFixture _fixture;
-
-    public QueryExecutorTests(PostgresFixture fixture) => _fixture = fixture;
+    public QueryExecutorTests(PostgresFixture fixture)
+        : base(fixture) { }
 
     private QueryExecutor<TravelTestDbContext> CreateExecutor(
         TravelTestDbContext context,
@@ -29,7 +28,7 @@ public class QueryExecutorTests
     [Fact]
     public async Task Execute_Select_ReturnsSeededRows()
     {
-        await using var context = _fixture.CreateContext();
+        await using var context = Fixture.CreateContext();
         var executor = CreateExecutor(context);
 
         var result = await executor.Execute("SELECT \"Destination\" FROM \"Bookings\"");
@@ -42,7 +41,7 @@ public class QueryExecutorTests
     [Fact]
     public async Task Execute_MaxRowsExceeded_TruncatesResult()
     {
-        await using var context = _fixture.CreateContext();
+        await using var context = Fixture.CreateContext();
         const string allBookings = "SELECT \"Id\" FROM \"Bookings\"";
 
         // Control: unrestricted, the table genuinely has 3 rows.
@@ -60,7 +59,7 @@ public class QueryExecutorTests
     [Fact]
     public async Task Execute_QueryWithComments_StripsThemAndRuns()
     {
-        await using var context = _fixture.CreateContext();
+        await using var context = Fixture.CreateContext();
         var executor = CreateExecutor(context);
 
         var result = await executor.Execute("SELECT 1 AS n -- inline comment\n/* block comment */");
@@ -74,7 +73,7 @@ public class QueryExecutorTests
     [Fact]
     public async Task Execute_InvalidSql_ReturnsErrorResult()
     {
-        await using var context = _fixture.CreateContext();
+        await using var context = Fixture.CreateContext();
         var executor = CreateExecutor(context);
 
         var result = await executor.Execute("SELECT * FROM table_that_does_not_exist");
@@ -86,7 +85,7 @@ public class QueryExecutorTests
     [Fact]
     public async Task Execute_ReadOnly_RollsBackWrites()
     {
-        await using var context = _fixture.CreateContext();
+        await using var context = Fixture.CreateContext();
         var executor = CreateExecutor(context, new AgentQLOptions { ReadOnly = true });
 
         var insert = await executor.Execute(

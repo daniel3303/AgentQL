@@ -7,15 +7,14 @@ using Xunit;
 namespace Equibles.AgentQL.IntegrationTests;
 
 [Collection(nameof(PostgresCollection))]
-public class SchemaProviderTests
+public class SchemaProviderTests : IntegrationTestBase
 {
-    private readonly PostgresFixture _fixture;
-
-    public SchemaProviderTests(PostgresFixture fixture) => _fixture = fixture;
+    public SchemaProviderTests(PostgresFixture fixture)
+        : base(fixture) { }
 
     private async Task<string> Describe(AgentQLOptions? options = null)
     {
-        await using var context = _fixture.CreateContext();
+        await using var context = Fixture.CreateContext();
         var provider = new SchemaProvider<TravelTestDbContext>(
             context,
             options ?? new AgentQLOptions()
