@@ -1,0 +1,9 @@
+default: true
+# Long lines are fine in prose and tables.
+MD013: false
+# Repeated headings occur across CHANGELOG version sections.
+MD024: false
+# Inline HTML is used in the PR template and badge blocks.
+MD033: false
+# The PR template intentionally starts at "##", not "#".
+MD041: false

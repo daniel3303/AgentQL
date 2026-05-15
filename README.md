@@ -1,5 +1,11 @@
 # AgentQL
 
+[![CI](https://github.com/daniel3303/AgentQL/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/daniel3303/AgentQL/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/daniel3303/AgentQL/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/daniel3303/AgentQL/actions/workflows/codeql.yml)
+[![NuGet](https://img.shields.io/nuget/v/Equibles.AgentQL.MicrosoftAI?logo=nuget)](https://www.nuget.org/packages/Equibles.AgentQL.MicrosoftAI)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Reusable .NET library that translates EF Core `DbContext` models into LLM-friendly schema descriptions and provides safe SQL query execution. Enables LLMs to understand your database structure and query it via function calling.
 
 ## Overview
@@ -308,7 +314,7 @@ Open `http://localhost:5143` in your browser. Configure your AI provider in `src
 
 ## Repository Layout
 
-```
+```text
 src/    Equibles.AgentQL, .EntityFrameworkCore, .MicrosoftAI, .Demo
 tests/  Equibles.AgentQL.UnitTests, Equibles.AgentQL.IntegrationTests
 ```
@@ -333,6 +339,17 @@ dotnet test
 ## Demo
 
 ![Demo screenshot](assets/demo-screenshot.png)
+
+## Contributing
+
+```bash
+dotnet tool restore        # restores CSharpier
+prek install -f            # installs the git pre-commit hooks (brew install prek)
+prek run --all-files       # run all hooks once
+```
+
+Use Conventional Commits for PR titles (`feat:`, `fix:`, `docs:`, `chore:`,
+`ci:`, `style:`). See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## License
 
