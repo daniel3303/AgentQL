@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/daniel3303/AgentQL/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/daniel3303/AgentQL/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/daniel3303/AgentQL/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/daniel3303/AgentQL/actions/workflows/codeql.yml)
+[![codecov](https://codecov.io/gh/daniel3303/AgentQL/graph/badge.svg)](https://codecov.io/gh/daniel3303/AgentQL)
 [![NuGet](https://img.shields.io/nuget/v/Equibles.AgentQL.MicrosoftAI?logo=nuget)](https://www.nuget.org/packages/Equibles.AgentQL.MicrosoftAI)
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
