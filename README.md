@@ -314,7 +314,7 @@ Open `http://localhost:5143` in your browser. Configure your AI provider in `src
 
 ## Repository Layout
 
-```
+```text
 src/    Equibles.AgentQL, .EntityFrameworkCore, .MicrosoftAI, .Demo
 tests/  Equibles.AgentQL.UnitTests, Equibles.AgentQL.IntegrationTests
 ```
@@ -339,6 +339,17 @@ dotnet test
 ## Demo
 
 ![Demo screenshot](assets/demo-screenshot.png)
+
+## Contributing
+
+```bash
+dotnet tool restore        # restores CSharpier
+prek install -f            # installs the git pre-commit hooks (brew install prek)
+prek run --all-files       # run all hooks once
+```
+
+Use Conventional Commits for PR titles (`feat:`, `fix:`, `docs:`, `chore:`,
+`ci:`, `style:`). See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## License
 
