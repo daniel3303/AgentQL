@@ -1,0 +1,4 @@
+# Mass reformat — run: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# chore: add CSharpier formatter (#3)
+68d4f63c31e67c5d8bdd8f461e8a4edb4b2feef4
