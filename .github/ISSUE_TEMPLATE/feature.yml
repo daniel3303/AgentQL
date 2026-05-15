@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose a new capability or API
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can't you do today, and why does it matter?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API / behavior
+      description: Sketch the attribute, fluent call, or option you have in mind.
+      render: csharp
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you've tried and why they fall short.
+    validations:
+      required: false
+  - type: input
+    id: upstream
+    attributes:
+      label: Related upstream issue
+      description: Link to an EF Core / Microsoft.Extensions.AI issue if this depends on one.
+    validations:
+      required: false
