@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Microsoft.Extensions.AI exposes nullable-annotated APIs; the testing
+         standard permits nullable in test code where library APIs require it. -->
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.analyzers" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="Microsoft.Extensions.AI" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Functional tier hosts the real Demo app on Kestrel and swaps only the
+         IChatClient; it needs the Demo's Program helpers + the AI extensions. -->
+    <ProjectReference Include="..\..\src\Equibles.AgentQL.Demo\Equibles.AgentQL.Demo.csproj" />
+    <ProjectReference Include="..\..\src\Equibles.AgentQL.MicrosoftAI\Equibles.AgentQL.MicrosoftAI.csproj" />
+  </ItemGroup>
+</Project>
