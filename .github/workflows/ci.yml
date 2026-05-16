@@ -39,6 +39,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Codecov tokenless auth via GitHub OIDC
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -62,7 +65,12 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
         with:
-          # Public repo — Codecov accepts tokenless uploads from GitHub Actions.
+          # No CODECOV_TOKEN secret: authenticate tokenlessly via GitHub OIDC.
+          # Plain tokenless uploads are rejected on protected branches
+          # ("Token required because branch is protected"), which is why main
+          # never got coverage. OIDC fixes that — it needs the job-level
+          # `id-token: write` permission added below and use_oidc: true.
+          use_oidc: true
           files: tests/**/TestResults/coverage.cobertura.xml
           disable_search: true
-          fail_ci_if_error: false
+          fail_ci_if_error: true
