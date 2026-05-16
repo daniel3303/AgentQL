@@ -1,5 +1,5 @@
 using System.Data;
-using System.Text.RegularExpressions;
+using System.Text;
 using Equibles.AgentQL.Configuration;
 using Equibles.AgentQL.Models;
 using Microsoft.EntityFrameworkCore;
@@ -99,15 +99,141 @@ public class QueryExecutor<TContext> : IQueryExecutor
         }
     }
 
+    // Strips SQL line/block comments and normalizes whitespace, while leaving
+    // single-quoted string literals, double-quoted identifiers, and PostgreSQL
+    // dollar-quoted strings verbatim — a "--", "/* */", or run of spaces inside
+    // a quoted run is data, not syntax. This is a normalization step, not a
+    // SQL-injection defense (read-only transaction isolation is). Quote escaping
+    // follows the SQL standard ('' / ""), matching PostgreSQL, SQLite, SQL
+    // Server and Oracle defaults; MySQL's non-standard backslash escapes inside
+    // string literals are not interpreted.
     private static string SanitizeQuery(string sql)
     {
         if (string.IsNullOrWhiteSpace(sql))
             return string.Empty;
 
-        sql = Regex.Replace(sql, @"--.*$", "", RegexOptions.Multiline);
-        sql = Regex.Replace(sql, @"/\*.*?\*/", "", RegexOptions.Singleline);
-        sql = Regex.Replace(sql, @"\s+", " ");
+        var result = new StringBuilder(sql.Length);
+        var i = 0;
 
-        return sql.Trim();
+        while (i < sql.Length)
+        {
+            var c = sql[i];
+
+            if (c == '\'' || c == '"')
+            {
+                i = CopyQuoted(sql, i, c, result);
+            }
+            else if (c == '$' && TryCopyDollarQuoted(sql, i, result, out var afterDollar))
+            {
+                i = afterDollar;
+            }
+            else if (c == '-' && i + 1 < sql.Length && sql[i + 1] == '-')
+            {
+                i += 2;
+                while (i < sql.Length && sql[i] != '\n' && sql[i] != '\r')
+                    i++;
+                AppendSeparator(result);
+            }
+            else if (c == '/' && i + 1 < sql.Length && sql[i + 1] == '*')
+            {
+                i += 2;
+                while (i + 1 < sql.Length && !(sql[i] == '*' && sql[i + 1] == '/'))
+                    i++;
+                i = i + 1 < sql.Length ? i + 2 : sql.Length;
+                AppendSeparator(result);
+            }
+            else if (char.IsWhiteSpace(c))
+            {
+                AppendSeparator(result);
+                i++;
+            }
+            else
+            {
+                result.Append(c);
+                i++;
+            }
+        }
+
+        return result.ToString().Trim();
+    }
+
+    // Copies a quoted run starting at its opening quote, treating a doubled
+    // quote ('' or "") as an escaped quote rather than a terminator. Returns
+    // the index just past the closing quote (or end, if unterminated).
+    private static int CopyQuoted(string sql, int start, char quote, StringBuilder result)
+    {
+        result.Append(quote);
+        var i = start + 1;
+
+        while (i < sql.Length)
+        {
+            var c = sql[i];
+            result.Append(c);
+
+            if (c == quote)
+            {
+                if (i + 1 < sql.Length && sql[i + 1] == quote)
+                {
+                    result.Append(quote);
+                    i += 2;
+                    continue;
+                }
+
+                return i + 1;
+            }
+
+            i++;
+        }
+
+        return i;
+    }
+
+    // Recognises a PostgreSQL dollar-quoted string ($$...$$ or $tag$...$tag$,
+    // tag = identifier) and copies the whole run verbatim. Returns false for a
+    // bare '$' or a positional parameter like $1 so the caller treats it as an
+    // ordinary character. An unterminated run is copied to the end.
+    private static bool TryCopyDollarQuoted(
+        string sql,
+        int start,
+        StringBuilder result,
+        out int next
+    )
+    {
+        var tagEnd = start + 1;
+
+        if (tagEnd < sql.Length && sql[tagEnd] != '$')
+        {
+            if (!char.IsLetter(sql[tagEnd]) && sql[tagEnd] != '_')
+            {
+                next = start;
+                return false;
+            }
+
+            tagEnd++;
+            while (tagEnd < sql.Length && (char.IsLetterOrDigit(sql[tagEnd]) || sql[tagEnd] == '_'))
+                tagEnd++;
+        }
+
+        if (tagEnd >= sql.Length || sql[tagEnd] != '$')
+        {
+            next = start;
+            return false;
+        }
+
+        var delimiter = sql.Substring(start, tagEnd - start + 1);
+        var close = sql.IndexOf(delimiter, tagEnd + 1, StringComparison.Ordinal);
+        var end = close < 0 ? sql.Length : close + delimiter.Length;
+
+        result.Append(sql, start, end - start);
+        next = end;
+        return true;
+    }
+
+    // Appends a single space unless the output is empty or already ends with
+    // one — collapses whitespace and removed-comment gaps to one separator.
+    private static void AppendSeparator(StringBuilder result)
+    {
+        if (result.Length > 0 && result[^1] != ' ')
+            result.Append(' ');
     }
 }

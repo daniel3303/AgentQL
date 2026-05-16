@@ -56,11 +56,21 @@ jobs:
       - name: Build
         run: dotnet build -c Release --no-restore
 
-      - name: Test
-        run: >-
-          dotnet test --solution Equibles.AgentQL.sln -c Release --no-build
-          -- --coverage --coverage-output-format cobertura
-          --coverage-output coverage.cobertura.xml
+      # Unit + integration tiers only. The Playwright/functional tier is a
+      # separate cadence (own workflow) per the testing standards: it needs
+      # browser binaries and a Kestrel host, and its project does not carry
+      # the code-coverage extension — passing it the --coverage args makes
+      # the MTP host reject them and fail the whole run with exit code 5.
+      - name: Test (unit + integration, with coverage)
+        run: |
+          dotnet test --project tests/Equibles.AgentQL.UnitTests/Equibles.AgentQL.UnitTests.csproj \
+            -c Release --no-build \
+            -- --coverage --coverage-output-format cobertura \
+            --coverage-output coverage.cobertura.xml
+          dotnet test --project tests/Equibles.AgentQL.IntegrationTests/Equibles.AgentQL.IntegrationTests.csproj \
+            -c Release --no-build \
+            -- --coverage --coverage-output-format cobertura \
+            --coverage-output coverage.cobertura.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
