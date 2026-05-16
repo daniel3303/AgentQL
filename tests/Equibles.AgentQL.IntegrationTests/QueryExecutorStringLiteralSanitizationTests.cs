@@ -16,7 +16,7 @@ public class QueryExecutorStringLiteralSanitizationTests : IntegrationTestBase
     // Contract: SanitizeQuery strips SQL *comments*. A "--" sequence inside a
     // single-quoted string literal is data, not a comment, so it must survive
     // sanitization untouched and the literal must round-trip through Execute.
-    [Fact(Skip = "GH-45 — SanitizeQuery strips '--' inside string literals, corrupting valid SQL")]
+    [Fact]
     public async Task Execute_StringLiteralContainingDoubleDash_PreservesLiteral()
     {
         await using var context = Fixture.CreateContext();
@@ -30,5 +30,23 @@ public class QueryExecutorStringLiteralSanitizationTests : IntegrationTestBase
 
         result.Success.Should().BeTrue(result.ErrorMessage);
         result.Data![0]["s"].Should().Be("--x");
+    }
+
+    // PostgreSQL dollar-quoted strings are literals too: a "--" and the inner
+    // spaces inside $$...$$ are data and must survive sanitization verbatim.
+    [Fact]
+    public async Task Execute_DollarQuotedLiteralContainingComment_PreservesLiteral()
+    {
+        await using var context = Fixture.CreateContext();
+        var executor = new QueryExecutor<TravelTestDbContext>(
+            context,
+            new AgentQLOptions(),
+            NullLogger<QueryExecutor<TravelTestDbContext>>.Instance
+        );
+
+        var result = await executor.Execute("SELECT $$a -- not a comment$$ AS s");
+
+        result.Success.Should().BeTrue(result.ErrorMessage);
+        result.Data![0]["s"].Should().Be("a -- not a comment");
     }
 }
