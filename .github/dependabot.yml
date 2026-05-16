@@ -8,6 +8,13 @@ updates:
     commit-message:
       prefix: "build"
       include: "scope"
+    ignore:
+      # 18.x requires Microsoft.Testing.Platform 2.x; xunit.v3 3.2.2 ships the
+      # MTP 1.x adapter (xunit.v3.mtp-v1) and the two collide
+      # (TypeLoadException: IDataConsumer). Hold at 17.x until xunit.v3 itself
+      # moves to MTP 2.x. See the pin rationale in Directory.Packages.props.
+      - dependency-name: "Microsoft.Testing.Extensions.CodeCoverage"
+        update-types: ["version-update:semver-major"]
     groups:
       microsoft:
         patterns: ["Microsoft.*", "System.*"]
