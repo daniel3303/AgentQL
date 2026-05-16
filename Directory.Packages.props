@@ -26,6 +26,6 @@
     <PackageVersion Include="Microsoft.Playwright" Version="1.59.0" />
     <!-- 17.x targets MTP 1.x to match xunit.v3 3.2.2 (xunit.v3.mtp-v1).
          18.x wants MTP 2.x → TypeLoadException: IDataConsumer. -->
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.13.1" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
   </ItemGroup>
 </Project>
