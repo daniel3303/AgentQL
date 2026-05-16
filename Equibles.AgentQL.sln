@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Equibles.AgentQL.IntegrationTests", "tests\Equibles.AgentQL.IntegrationTests\Equibles.AgentQL.IntegrationTests.csproj", "{580BE8EE-FBD3-441D-BF1D-A2152203AACC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Equibles.AgentQL.FunctionalTests", "tests\Equibles.AgentQL.FunctionalTests\Equibles.AgentQL.FunctionalTests.csproj", "{7000BD58-B300-4E29-ABB8-88981F0AB87A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,18 @@ Global
 		{580BE8EE-FBD3-441D-BF1D-A2152203AACC}.Release|x64.Build.0 = Release|Any CPU
 		{580BE8EE-FBD3-441D-BF1D-A2152203AACC}.Release|x86.ActiveCfg = Release|Any CPU
 		{580BE8EE-FBD3-441D-BF1D-A2152203AACC}.Release|x86.Build.0 = Release|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Debug|x64.Build.0 = Debug|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Debug|x86.Build.0 = Debug|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Release|x64.ActiveCfg = Release|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Release|x64.Build.0 = Release|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Release|x86.ActiveCfg = Release|Any CPU
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -108,5 +122,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{AD8C6D6D-806E-4B2E-85E2-44B7073AF812} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{580BE8EE-FBD3-441D-BF1D-A2152203AACC} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{7000BD58-B300-4E29-ABB8-88981F0AB87A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
