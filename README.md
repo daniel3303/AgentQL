@@ -132,7 +132,7 @@ With `ReadOnly = true` the executor opens a transaction and rolls it back at the
 | PostgreSQL | Yes | `SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY` |
 | SQLite | Yes | `PRAGMA query_only = 1` |
 | SQL Server | **No** — rollback-only | No equivalent in-band session command |
-| MySQL | _(planned)_ | `SET SESSION TRANSACTION READ ONLY` |
+| MySQL | Yes | `SET SESSION TRANSACTION READ ONLY` |
 | Oracle | _(planned)_ | `SET TRANSACTION READ ONLY` |
 
 For providers without DBMS-level enforcement, the rollback-only defense remains vulnerable to embedded transaction-control statements. The recommended hardening — applicable to every provider, regardless of in-band enforcement — is to point AgentQL at a least-privileged DB principal that has only `SELECT` (PostgreSQL/MySQL/Oracle) or `db_datareader` (SQL Server). Connection-level options such as `ApplicationIntent=ReadOnly` against an Always-On read-only secondary (SQL Server) or `Options=-c default_transaction_read_only=on` (PostgreSQL) provide a similar guarantee.
