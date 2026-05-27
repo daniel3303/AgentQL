@@ -121,6 +121,7 @@ Passed via `configureAgentQL` when calling `AddAgentQL` or `AddAgentQLChat`:
 | `MaxRows` | `int` | `25` | Maximum rows returned per query |
 | `MaxColumns` | `int` | `50` | Maximum columns the result set may have. Wider queries are refused with an error message so the LLM picks a narrower projection list. Extraction defense on top of `MaxRows` |
 | `MaxSqlLength` | `int` | `8192` | Maximum length of the raw SQL string. Longer queries are refused before sanitization or transmission, so neither the executor nor the DBMS pays parse cost on pathological input |
+| `MaxBytes` | `long` | `1048576` | Maximum cumulative byte cost of the result. Checked per value during read so a single oversized cell aborts on the spot. Strings count UTF-8 bytes, byte arrays count raw length, primitives use fixed widths |
 | `ReadOnly` | `bool` | `true` | When true, the executor refuses persisted writes — see **ReadOnly mode** below for per-provider enforcement details |
 | `CommandTimeout` | `int` | `15` | SQL command timeout in seconds |
 | `DefaultBehavior` | `IncludeBehavior` | `IncludeAll` | Whether entities/properties are included or excluded by default |

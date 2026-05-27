@@ -133,13 +133,29 @@ public class QueryExecutor<TContext> : IQueryExecutor
                             }
 
                             var rowCount = 0;
+                            long totalBytes = 0;
                             while (await reader.ReadAsync() && rowCount < _options.MaxRows)
                             {
                                 var row = new Dictionary<string, object>();
                                 for (var i = 0; i < reader.FieldCount; i++)
                                 {
                                     var value = reader.GetValue(i);
-                                    row[reader.GetName(i)] = value == DBNull.Value ? null : value;
+                                    var stored = value == DBNull.Value ? null : value;
+                                    row[reader.GetName(i)] = stored;
+                                    totalBytes += EstimateValueBytes(stored);
+                                    if (totalBytes > _options.MaxBytes)
+                                    {
+                                        // Per-value granularity — a single
+                                        // huge BLOB cell aborts on the spot
+                                        // rather than after the row is built,
+                                        // so the row dictionary that pushed
+                                        // us over is discarded along with
+                                        // any further rows. The LLM gets a
+                                        // clear signal to narrow the query.
+                                        return QueryResult.FromError(
+                                            $"Result data exceeds MaxBytes limit of {_options.MaxBytes} bytes (over after {rowCount} complete rows). Narrow the projection list, add a WHERE filter, or lower MaxRows."
+                                        );
+                                    }
                                 }
 
                                 results.Add(row);
@@ -216,6 +232,36 @@ public class QueryExecutor<TContext> : IQueryExecutor
             return QueryResult.FromError($"Query execution failed: {ex.Message}");
         }
     }
+
+    // Estimates the byte cost of materialising one column value so the read
+    // loop can stop early on oversized payloads. Strings count their UTF-8
+    // byte length (what the value would weigh on the wire / in JSON); byte
+    // arrays count their raw length; primitives use their fixed widths.
+    // Unknown types fall back to a stringified estimate — a conservative
+    // upper bound that biases toward refusing borderline-sized results.
+    private static long EstimateValueBytes(object value) =>
+        value switch
+        {
+            null => 0,
+            string s => Encoding.UTF8.GetByteCount(s),
+            byte[] b => b.Length,
+            bool => 1,
+            char => 2,
+            short => 2,
+            ushort => 2,
+            int => 4,
+            uint => 4,
+            long => 8,
+            ulong => 8,
+            float => 4,
+            double => 8,
+            decimal => 16,
+            Guid => 16,
+            DateTime => 8,
+            DateTimeOffset => 12,
+            TimeSpan => 8,
+            _ => Encoding.UTF8.GetByteCount(value.ToString() ?? string.Empty),
+        };
 
     // Strips SQL line/block comments and normalizes whitespace, while leaving
     // single-quoted string literals, double-quoted identifiers, and PostgreSQL

@@ -8,6 +8,7 @@ public class AgentQLOptions
     public int MaxRows { get; set; } = 25;
     public int MaxColumns { get; set; } = 50;
     public int MaxSqlLength { get; set; } = 8192;
+    public long MaxBytes { get; set; } = 1024 * 1024;
     public int CommandTimeout { get; set; } = 15;
     public bool ReadOnly { get; set; } = true;
 
