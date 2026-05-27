@@ -15,6 +15,7 @@ public class QueryExecutor<TContext> : IQueryExecutor
     private readonly TContext _context;
     private readonly AgentQLOptions _options;
     private readonly ILogger<QueryExecutor<TContext>> _logger;
+    private bool _limitationLogged;
 
     public int MaxRows => _options.MaxRows;
 
@@ -42,6 +43,15 @@ public class QueryExecutor<TContext> : IQueryExecutor
             var enforcer = _options.ReadOnly
                 ? ReadOnlySessionEnforcerFactory.Resolve(_context.Database.ProviderName)
                 : NullReadOnlySessionEnforcer.Instance;
+
+            if (_options.ReadOnly && !_limitationLogged && enforcer.Limitation != null)
+            {
+                _logger.LogWarning(
+                    "AgentQL ReadOnly mode has a limitation on this provider: {Limitation}",
+                    enforcer.Limitation
+                );
+                _limitationLogged = true;
+            }
 
             var connection = _context.Database.GetDbConnection();
             var connectionWasOpen = connection.State == ConnectionState.Open;

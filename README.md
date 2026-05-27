@@ -119,9 +119,23 @@ Passed via `configureAgentQL` when calling `AddAgentQL` or `AddAgentQLChat`:
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `MaxRows` | `int` | `25` | Maximum rows returned per query |
-| `ReadOnly` | `bool` | `true` | When true, queries run inside a rolled-back transaction |
+| `ReadOnly` | `bool` | `true` | When true, the executor refuses persisted writes — see **ReadOnly mode** below for per-provider enforcement details |
 | `CommandTimeout` | `int` | `15` | SQL command timeout in seconds |
 | `DefaultBehavior` | `IncludeBehavior` | `IncludeAll` | Whether entities/properties are included or excluded by default |
+
+#### ReadOnly mode
+
+With `ReadOnly = true` the executor opens a transaction and rolls it back at the end of the query, and — where the provider supports it — also flips the connection's session to read-only so the DBMS itself refuses writes. The session-level defense closes a SQL-injection class where an LLM-issued embedded `COMMIT` would otherwise close the executor's transaction mid-batch and let a trailing `INSERT` autocommit.
+
+| Provider | DBMS-level enforcement | Mechanism |
+|----------|------------------------|-----------|
+| PostgreSQL | Yes | `SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY` |
+| SQLite | Yes | `PRAGMA query_only = 1` |
+| SQL Server | **No** — rollback-only | No equivalent in-band session command |
+| MySQL | _(planned)_ | `SET SESSION TRANSACTION READ ONLY` |
+| Oracle | _(planned)_ | `SET TRANSACTION READ ONLY` |
+
+For providers without DBMS-level enforcement, the rollback-only defense remains vulnerable to embedded transaction-control statements. The recommended hardening — applicable to every provider, regardless of in-band enforcement — is to point AgentQL at a least-privileged DB principal that has only `SELECT` (PostgreSQL/MySQL/Oracle) or `db_datareader` (SQL Server). Connection-level options such as `ApplicationIntent=ReadOnly` against an Always-On read-only secondary (SQL Server) or `Options=-c default_transaction_read_only=on` (PostgreSQL) provide a similar guarantee.
 
 ### AgentQLChatOptions
 

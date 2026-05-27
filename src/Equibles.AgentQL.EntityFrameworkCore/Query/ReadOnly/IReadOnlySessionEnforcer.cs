@@ -16,4 +16,9 @@ internal interface IReadOnlySessionEnforcer
     // caller translates this into a Success=true result with empty data so
     // the LLM sees the same shape as the prior rollback-only behavior.
     bool IsReadOnlyViolation(Exception ex);
+
+    // Non-null when the enforcer cannot fully enforce ReadOnly mode at the
+    // DBMS — the executor logs this message once so operators see what is
+    // and is not guaranteed, and what to do about it.
+    string Limitation => null;
 }

@@ -12,6 +12,9 @@ internal static class ReadOnlySessionEnforcerFactory
         if (name.Contains("sqlite"))
             return SqliteReadOnlySessionEnforcer.Instance;
 
+        if (name.Contains("sqlserver"))
+            return SqlServerReadOnlySessionEnforcer.Instance;
+
         return NullReadOnlySessionEnforcer.Instance;
     }
 }
