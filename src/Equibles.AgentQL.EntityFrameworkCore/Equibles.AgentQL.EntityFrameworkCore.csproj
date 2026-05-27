@@ -14,4 +14,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Equibles.AgentQL\Equibles.AgentQL.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Equibles.AgentQL.UnitTests" />
+  </ItemGroup>
 </Project>
