@@ -34,6 +34,18 @@ public class QueryExecutor<TContext> : IQueryExecutor
     {
         try
         {
+            // Pre-sanitization length cap: stops pathologically large SQL
+            // before the executor pays sanitization cost (a per-char walk)
+            // or the DBMS pays parse + plan cost. The LLM's output token
+            // budget already caps realistic SQL well below 8 KB; legitimate
+            // queries are not affected.
+            if (sql != null && sql.Length > _options.MaxSqlLength)
+            {
+                return QueryResult.FromError(
+                    $"SQL is {sql.Length} characters, exceeds MaxSqlLength limit of {_options.MaxSqlLength}."
+                );
+            }
+
             var sanitizedSql = SanitizeQuery(sql);
 
             if (_options.ReadOnly)

@@ -7,6 +7,7 @@ public class AgentQLOptions
     public IncludeBehavior DefaultBehavior { get; set; } = IncludeBehavior.IncludeAll;
     public int MaxRows { get; set; } = 25;
     public int MaxColumns { get; set; } = 50;
+    public int MaxSqlLength { get; set; } = 8192;
     public int CommandTimeout { get; set; } = 15;
     public bool ReadOnly { get; set; } = true;
 
