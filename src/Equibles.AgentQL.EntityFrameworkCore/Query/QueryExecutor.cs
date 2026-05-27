@@ -1,6 +1,7 @@
 using System.Data;
 using System.Text;
 using Equibles.AgentQL.Configuration;
+using Equibles.AgentQL.EntityFrameworkCore.Query.ReadOnly;
 using Equibles.AgentQL.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -37,60 +38,114 @@ public class QueryExecutor<TContext> : IQueryExecutor
             var isolationLevel = _options.ReadOnly
                 ? IsolationLevel.ReadUncommitted
                 : IsolationLevel.ReadCommitted;
-            await using var transaction = await _context.Database.BeginTransactionAsync(
-                isolationLevel
-            );
+
+            var enforcer = _options.ReadOnly
+                ? ReadOnlySessionEnforcerFactory.Resolve(_context.Database.ProviderName)
+                : NullReadOnlySessionEnforcer.Instance;
+
+            var connection = _context.Database.GetDbConnection();
+            var connectionWasOpen = connection.State == ConnectionState.Open;
+            if (!connectionWasOpen)
+                await _context.Database.OpenConnectionAsync();
 
             try
             {
-                var results = new List<Dictionary<string, object>>();
-
-                await using var command = _context.Database.GetDbConnection().CreateCommand();
-                command.CommandText = sanitizedSql;
-                command.CommandTimeout = _options.CommandTimeout;
-                command.Transaction = transaction.GetDbTransaction();
-
-                await using (var reader = await command.ExecuteReaderAsync())
-                {
-                    var rowCount = 0;
-                    while (await reader.ReadAsync() && rowCount < _options.MaxRows)
-                    {
-                        var row = new Dictionary<string, object>();
-                        for (var i = 0; i < reader.FieldCount; i++)
-                        {
-                            var value = reader.GetValue(i);
-                            row[reader.GetName(i)] = value == DBNull.Value ? null : value;
-                        }
-
-                        results.Add(row);
-                        rowCount++;
-                    }
-                }
-
-                if (_options.ReadOnly)
-                    await transaction.RollbackAsync();
-                else
-                    await transaction.CommitAsync();
-
-                return QueryResult.FromSuccess(results, sanitizedSql);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error executing SQL query: {Sql}", sanitizedSql);
+                await enforcer.Apply(connection);
 
                 try
                 {
-                    await transaction.RollbackAsync();
-                }
-                catch (Exception rollbackEx)
-                {
-                    _logger.LogWarning(
-                        rollbackEx,
-                        "Failed to rollback transaction, but this is expected if connection was already closed"
+                    await using var transaction = await _context.Database.BeginTransactionAsync(
+                        isolationLevel
                     );
-                }
 
-                throw;
+                    try
+                    {
+                        var results = new List<Dictionary<string, object>>();
+
+                        await using var command = connection.CreateCommand();
+                        command.CommandText = sanitizedSql;
+                        command.CommandTimeout = _options.CommandTimeout;
+                        command.Transaction = transaction.GetDbTransaction();
+
+                        await using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            var rowCount = 0;
+                            while (await reader.ReadAsync() && rowCount < _options.MaxRows)
+                            {
+                                var row = new Dictionary<string, object>();
+                                for (var i = 0; i < reader.FieldCount; i++)
+                                {
+                                    var value = reader.GetValue(i);
+                                    row[reader.GetName(i)] = value == DBNull.Value ? null : value;
+                                }
+
+                                results.Add(row);
+                                rowCount++;
+                            }
+                        }
+
+                        if (_options.ReadOnly)
+                            await transaction.RollbackAsync();
+                        else
+                            await transaction.CommitAsync();
+
+                        return QueryResult.FromSuccess(results, sanitizedSql);
+                    }
+                    catch (Exception ex)
+                    {
+                        try
+                        {
+                            await transaction.RollbackAsync();
+                        }
+                        catch (Exception rollbackEx)
+                        {
+                            _logger.LogWarning(
+                                rollbackEx,
+                                "Failed to rollback transaction, but this is expected if connection was already closed"
+                            );
+                        }
+
+                        // A read-only violation is the public success path under
+                        // ReadOnly mode — the DBMS enforced what the executor
+                        // would otherwise have rolled back. Return empty data so
+                        // the LLM-facing contract is unchanged.
+                        if (_options.ReadOnly && enforcer.IsReadOnlyViolation(ex))
+                        {
+                            _logger.LogInformation(
+                                "Read-only mode rejected a write attempt at the DBMS: {Sql}",
+                                sanitizedSql
+                            );
+                            return QueryResult.FromSuccess(
+                                new List<Dictionary<string, object>>(),
+                                sanitizedSql
+                            );
+                        }
+
+                        _logger.LogError(ex, "Error executing SQL query: {Sql}", sanitizedSql);
+                        throw;
+                    }
+                }
+                finally
+                {
+                    // Session settings persist across pooled connections, so the
+                    // reset must run even when execution failed.
+                    try
+                    {
+                        await enforcer.Reset(connection);
+                    }
+                    catch (Exception resetEx)
+                    {
+                        _logger.LogWarning(
+                            resetEx,
+                            "Failed to reset read-only session settings; the connection will not be returned to the pool in its original state"
+                        );
+                    }
+                }
+            }
+            finally
+            {
+                if (!connectionWasOpen)
+                    await _context.Database.CloseConnectionAsync();
             }
         }
         catch (Exception ex)
@@ -103,10 +158,10 @@ public class QueryExecutor<TContext> : IQueryExecutor
     // single-quoted string literals, double-quoted identifiers, and PostgreSQL
     // dollar-quoted strings verbatim — a "--", "/* */", or run of spaces inside
     // a quoted run is data, not syntax. This is a normalization step, not a
-    // SQL-injection defense (read-only transaction isolation is). Quote escaping
-    // follows the SQL standard ('' / ""), matching PostgreSQL, SQLite, SQL
-    // Server and Oracle defaults; MySQL's non-standard backslash escapes inside
-    // string literals are not interpreted.
+    // SQL-injection defense (the read-only session enforcement and end-of-query
+    // rollback are). Quote escaping follows the SQL standard ('' / ""), matching
+    // PostgreSQL, SQLite, SQL Server and Oracle defaults; MySQL's non-standard
+    // backslash escapes inside string literals are not interpreted.
     private static string SanitizeQuery(string sql)
     {
         if (string.IsNullOrWhiteSpace(sql))

@@ -15,6 +15,12 @@ namespace Equibles.AgentQL.IntegrationTests;
 /// stronger than the per-statement-shape variants — the rollback must
 /// neutralise every mutation, no matter what transaction-control keywords
 /// the SQL contains. Durability is verified on an INDEPENDENT connection.
+///
+/// Defense: when ReadOnly is true the executor issues
+/// <c>SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY</c> on the
+/// connection before opening its own transaction, so the implicit
+/// autocommit transaction underneath the trailing INSERT is also read-only
+/// and PostgreSQL refuses the write at the server.
 /// </summary>
 [Collection(nameof(PostgresCollection))]
 public class QueryExecutorReadOnlyCommitInjectionProtectionTests : IntegrationTestBase
@@ -22,7 +28,7 @@ public class QueryExecutorReadOnlyCommitInjectionProtectionTests : IntegrationTe
     public QueryExecutorReadOnlyCommitInjectionProtectionTests(PostgresFixture fixture)
         : base(fixture) { }
 
-    [Fact(Skip = "GH-76 — embedded COMMIT closes the executor's tx, trailing INSERT persists")]
+    [Fact]
     public async Task Execute_ReadOnlyCommitInjectedThenInsert_DoesNotPersistAcrossConnections()
     {
         await using var executorContext = Fixture.CreateContext();
