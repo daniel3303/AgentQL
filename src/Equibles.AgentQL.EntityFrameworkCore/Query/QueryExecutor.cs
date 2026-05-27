@@ -99,6 +99,27 @@ public class QueryExecutor<TContext> : IQueryExecutor
 
                         await using (var reader = await command.ExecuteReaderAsync())
                         {
+                            if (reader.FieldCount > _options.MaxColumns)
+                            {
+                                // Reject queries that would return more
+                                // columns than the configured cap — this is
+                                // an extraction defense on top of MaxRows,
+                                // and a clear signal to the LLM to narrow
+                                // its column list. Use Error so the LLM sees
+                                // a message it can learn from rather than an
+                                // empty result that looks like a hit. The
+                                // reader's await-using scope and the outer
+                                // transaction's await-using scope take care
+                                // of disposal + auto-rollback as the stack
+                                // unwinds — no explicit rollback is needed
+                                // (issuing one here while the reader is open
+                                // throws "command in progress").
+                                var fieldCount = reader.FieldCount;
+                                return QueryResult.FromError(
+                                    $"Result has {fieldCount} columns, exceeds MaxColumns limit of {_options.MaxColumns}. Project a specific column list instead of SELECT *."
+                                );
+                            }
+
                             var rowCount = 0;
                             while (await reader.ReadAsync() && rowCount < _options.MaxRows)
                             {

@@ -119,6 +119,7 @@ Passed via `configureAgentQL` when calling `AddAgentQL` or `AddAgentQLChat`:
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `MaxRows` | `int` | `25` | Maximum rows returned per query |
+| `MaxColumns` | `int` | `50` | Maximum columns the result set may have. Wider queries are refused with an error message so the LLM picks a narrower projection list. Extraction defense on top of `MaxRows` |
 | `ReadOnly` | `bool` | `true` | When true, the executor refuses persisted writes — see **ReadOnly mode** below for per-provider enforcement details |
 | `CommandTimeout` | `int` | `15` | SQL command timeout in seconds |
 | `DefaultBehavior` | `IncludeBehavior` | `IncludeAll` | Whether entities/properties are included or excluded by default |
