@@ -9,6 +9,9 @@ internal static class ReadOnlySessionEnforcerFactory
         if (name.Contains("npgsql") || name.Contains("postgresql"))
             return PostgreSqlReadOnlySessionEnforcer.Instance;
 
+        if (name.Contains("sqlite"))
+            return SqliteReadOnlySessionEnforcer.Instance;
+
         return NullReadOnlySessionEnforcer.Instance;
     }
 }
