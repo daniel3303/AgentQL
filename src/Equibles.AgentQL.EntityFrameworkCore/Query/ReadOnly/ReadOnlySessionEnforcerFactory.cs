@@ -18,6 +18,9 @@ internal static class ReadOnlySessionEnforcerFactory
         if (name.Contains("mysql") || name.Contains("pomelo"))
             return MySqlReadOnlySessionEnforcer.Instance;
 
+        if (name.Contains("oracle"))
+            return OracleReadOnlySessionEnforcer.Instance;
+
         return NullReadOnlySessionEnforcer.Instance;
     }
 }
