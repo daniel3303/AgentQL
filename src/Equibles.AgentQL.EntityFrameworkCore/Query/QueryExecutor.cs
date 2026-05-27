@@ -36,6 +36,26 @@ public class QueryExecutor<TContext> : IQueryExecutor
         {
             var sanitizedSql = SanitizeQuery(sql);
 
+            if (_options.ReadOnly)
+            {
+                var violation = ReadOnlyStatementValidator.Validate(sanitizedSql);
+                if (violation != null)
+                {
+                    // Same shape as the DBMS-level read-only rejection from
+                    // PR #106 — silent neutralization with empty results, so
+                    // the LLM-facing contract is uniform across all defenses.
+                    _logger.LogInformation(
+                        "ReadOnly statement whitelist rejected: {Violation}. Sql: {Sql}",
+                        violation,
+                        sanitizedSql
+                    );
+                    return QueryResult.FromSuccess(
+                        new List<Dictionary<string, object>>(),
+                        sanitizedSql
+                    );
+                }
+            }
+
             var isolationLevel = _options.ReadOnly
                 ? IsolationLevel.ReadUncommitted
                 : IsolationLevel.ReadCommitted;

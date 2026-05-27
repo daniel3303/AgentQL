@@ -125,17 +125,21 @@ Passed via `configureAgentQL` when calling `AddAgentQL` or `AddAgentQLChat`:
 
 #### ReadOnly mode
 
-With `ReadOnly = true` the executor opens a transaction and rolls it back at the end of the query, and — where the provider supports it — also flips the connection's session to read-only so the DBMS itself refuses writes. The session-level defense closes a SQL-injection class where an LLM-issued embedded `COMMIT` would otherwise close the executor's transaction mid-batch and let a trailing `INSERT` autocommit.
+With `ReadOnly = true` the executor applies three layers of defense:
+
+1. **Statement whitelist (provider-agnostic).** Before the connection is opened, the SQL is parsed and any statement that is not a `SELECT`, `VALUES`, `TABLE`, or `WITH` with a read-shaped body (CTEs validated recursively) is silently neutralized — the result returns `Success=true` with empty data, the write never reaches the database. Every DML, DDL, transaction-control, permission, session-settings, anonymous-block, and stored-procedure call is refused at this layer.
+2. **DBMS session read-only (where the provider supports it).** The connection's session is flipped to read-only so the database itself refuses any write that did somehow get past the whitelist — including writes attempted under an implicit autocommit transaction after an embedded `COMMIT`.
+3. **End-of-query rollback.** The executor's transaction rolls back at the end of every query regardless of outcome.
 
 | Provider | DBMS-level enforcement | Mechanism |
 |----------|------------------------|-----------|
 | PostgreSQL | Yes | `SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY` |
 | SQLite | Yes | `PRAGMA query_only = 1` |
-| SQL Server | **No** — rollback-only | No equivalent in-band session command |
+| SQL Server | **No** — covered only by the statement whitelist and rollback | No equivalent in-band session command |
 | MySQL | Yes | `SET SESSION TRANSACTION READ ONLY` |
-| Oracle | **No** — rollback-only | `SET TRANSACTION READ ONLY` is per-transaction; no session-level equivalent |
+| Oracle | **No** — covered only by the statement whitelist and rollback | `SET TRANSACTION READ ONLY` is per-transaction; no session-level equivalent |
 
-For providers without DBMS-level enforcement, the rollback-only defense remains vulnerable to embedded transaction-control statements. The recommended hardening — applicable to every provider, regardless of in-band enforcement — is to point AgentQL at a least-privileged DB principal that has only `SELECT` (PostgreSQL/MySQL/Oracle) or `db_datareader` (SQL Server). Connection-level options such as `ApplicationIntent=ReadOnly` against an Always-On read-only secondary (SQL Server) or `Options=-c default_transaction_read_only=on` (PostgreSQL) provide a similar guarantee.
+Even with all three layers, the recommended production hardening is to point AgentQL at a least-privileged DB principal that has only `SELECT` (PostgreSQL/MySQL/Oracle) or `db_datareader` (SQL Server). Connection-level options such as `ApplicationIntent=ReadOnly` against an Always-On read-only secondary (SQL Server) or `Options=-c default_transaction_read_only=on` (PostgreSQL) provide a similar guarantee at the auth/config layer.
 
 ### AgentQLChatOptions
 
