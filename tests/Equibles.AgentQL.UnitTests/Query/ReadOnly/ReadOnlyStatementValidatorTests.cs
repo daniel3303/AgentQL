@@ -75,6 +75,10 @@ public class ReadOnlyStatementValidatorTests
 
     [Theory]
     [InlineData("WITH x AS (INSERT INTO foo VALUES (1) RETURNING *) SELECT * FROM x", "INSERT")]
+    // Explicit CTE column list — WITH x(a) AS (...) — must not let a writable
+    // body slip past the recursive check; the column-list parens are a distinct
+    // parse branch from the bare-name form above.
+    [InlineData("WITH x(a) AS (INSERT INTO foo VALUES (1) RETURNING a) SELECT * FROM x", "INSERT")]
     [InlineData("WITH x AS (UPDATE foo SET a = 1 RETURNING *) SELECT * FROM x", "UPDATE")]
     [InlineData("WITH x AS (DELETE FROM foo RETURNING *) SELECT * FROM x", "DELETE")]
     [InlineData(
