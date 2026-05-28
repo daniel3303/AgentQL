@@ -22,4 +22,17 @@ public class ReadOnlySessionEnforcerFactoryTests
 
         enforcer.Should().BeSameAs(NullReadOnlySessionEnforcer.Instance);
     }
+
+    [Fact]
+    public void Resolve_SqlServerProviderName_ReturnsSqlServerEnforcer()
+    {
+        // The SQL Server EF Core provider's invariant name must route to the
+        // SQL Server enforcer; mis-routing would apply another provider's
+        // session SQL (or none) to a SQL Server connection.
+        var enforcer = ReadOnlySessionEnforcerFactory.Resolve(
+            "Microsoft.EntityFrameworkCore.SqlServer"
+        );
+
+        enforcer.Should().BeSameAs(SqlServerReadOnlySessionEnforcer.Instance);
+    }
 }
