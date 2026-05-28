@@ -41,6 +41,23 @@ public class SqliteReadOnlySessionEnforcerTests
         _enforcer.IsReadOnlyViolation(ex).Should().BeFalse();
     }
 
+    [Fact]
+    public void IsReadOnlyViolation_DbExceptionWithoutSqlitePrimaryErrorCode_ReturnsFalse()
+    {
+        // Contract: a DbException from a non-SQLite provider has no
+        // SqlitePrimaryErrorCode property, so the reflection lookup yields null
+        // and detection must return false — not throw on the missing property.
+        var ex = new FakePlainDbException("a non-sqlite db error");
+
+        _enforcer.IsReadOnlyViolation(ex).Should().BeFalse();
+    }
+
+    private sealed class FakePlainDbException : DbException
+    {
+        public FakePlainDbException(string message)
+            : base(message) { }
+    }
+
     private sealed class FakeNonDbExceptionWithCode : Exception
     {
         public FakeNonDbExceptionWithCode(string message, int sqlitePrimaryErrorCode)
