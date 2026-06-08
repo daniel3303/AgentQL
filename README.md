@@ -9,6 +9,8 @@
 
 Reusable .NET library that translates EF Core `DbContext` models into LLM-friendly schema descriptions and provides safe SQL query execution. Enables LLMs to understand your database structure and query it via function calling.
 
+See [`docs/`](docs/README.md) for full documentation.
+
 ## Overview
 
 AgentQL sits between your EF Core database and any AI provider (OpenAI, Anthropic, Ollama). It:
