@@ -157,6 +157,29 @@ Passed via `configureChat` when calling `AddAgentQLChat`:
 | `MaxOutputTokens` | `int` | `4096` | Maximum tokens in the AI response |
 | `SystemPrompt` | `string` | *(built-in)* | System prompt sent to the LLM |
 
+### AgentQLSelfCorrectionOptions
+
+Passed via `configureSelfCorrection` when calling `AddAgentQLChat`:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `MaxAttempts` | `int` | `4` | Maximum number of system-reminder nudges before giving up. Each nudge re-runs the tool loop |
+| `ExhaustionMessage` | `string` | *(English default)* | Returned as the answer when the agent never produces a usable result within `MaxAttempts`. Override to match the app's language |
+
+## Self-Correction
+
+The function-invocation loop ends as soon as the model stops calling tools — including when it gives up with an empty message after a failed query. The self-correction guard wraps that loop and inspects the final turn: if the model answered nothing, or stopped right after an `ExecuteQuery` error without retrying or calling `ReportFailure`, it injects a `<system-reminder>` (restating the question and telling the model to read the error, fix the SQL, and retry) and runs the loop again — up to `MaxAttempts` times. If it still can't answer, it returns `ExhaustionMessage` instead of an empty response.
+
+It is enabled by default in `AddAgentQLChat`. To add it to a hand-built pipeline, register it **before** `UseFunctionInvocation` so it wraps the loop:
+
+```csharp
+IChatClient pipeline = innerClient
+    .AsBuilder()
+    .UseAgentQLSelfCorrection()
+    .UseFunctionInvocation()
+    .Build();
+```
+
 ## Attributes
 
 ### `[AgentQLEntity]`

@@ -15,7 +15,8 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddAgentQLChat<TContext>(
         this IServiceCollection services,
         Action<AgentQLOptions> configureAgentQL = null,
-        Action<AgentQLChatOptions> configureChat = null
+        Action<AgentQLChatOptions> configureChat = null,
+        Action<AgentQLSelfCorrectionOptions> configureSelfCorrection = null
     )
         where TContext : DbContext
     {
@@ -24,6 +25,9 @@ public static class ServiceCollectionExtensions
         var chatOptions = new AgentQLChatOptions();
         configureChat?.Invoke(chatOptions);
         services.AddSingleton(chatOptions);
+
+        var selfCorrectionOptions = new AgentQLSelfCorrectionOptions();
+        configureSelfCorrection?.Invoke(selfCorrectionOptions);
 
         services.AddScoped<AgentQLPlugin>();
 
@@ -38,7 +42,13 @@ public static class ServiceCollectionExtensions
                 _ => throw new ArgumentOutOfRangeException(nameof(options.Provider)),
             };
 
-            return new ChatClientBuilder(innerClient).UseFunctionInvocation().Build();
+            // Self-correction is added before function invocation so it ends up
+            // the outer wrapper around the whole tool loop (see
+            // ChatClientBuilderExtensions.UseAgentQLSelfCorrection).
+            return new ChatClientBuilder(innerClient)
+                .UseAgentQLSelfCorrection(selfCorrectionOptions)
+                .UseFunctionInvocation()
+                .Build();
         });
 
         return services;
