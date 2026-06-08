@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-06-08
+
+### Fixed
+
+- ReadOnly statement validator wrongly rejected `WITH` (CTE) queries whose CTE
+  name was double-quoted (e.g. `WITH "Summary" AS (...) SELECT ...`) as "malformed",
+  silently neutralising a valid read-only query into empty results. The identifier
+  reader now handles double-quoted identifiers (and digits in unquoted names), so
+  quoted CTEs execute normally. The recursive write-detection guard still rejects a
+  writable body inside a quoted CTE.
+
 ## [0.2.0] — 2026-06-08
 
 ### Added
@@ -48,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the `Microsoft.Extensions.AI` plugin bridge (OpenAI, Anthropic, Ollama).
 - Blazor demo app, README with usage guide, and NuGet packaging + publish workflow.
 
-[Unreleased]: https://github.com/daniel3303/AgentQL/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/daniel3303/AgentQL/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/daniel3303/AgentQL/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/daniel3303/AgentQL/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/daniel3303/AgentQL/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/daniel3303/AgentQL/compare/v0.1.1...v0.1.2

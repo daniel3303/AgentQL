@@ -37,8 +37,28 @@ public class ReadOnlyStatementValidatorTests
     [InlineData("WITH x AS NOT MATERIALIZED (SELECT 1) SELECT * FROM x")]
     [InlineData("WITH a AS (SELECT 1), b AS (SELECT 2) SELECT * FROM a, b")]
     [InlineData("WITH a AS (WITH b AS (SELECT 1) SELECT * FROM b) SELECT * FROM a")]
+    // Double-quoted CTE names — PascalCase quoting is the norm for an LLM told to
+    // quote every identifier, and must not be rejected as malformed.
+    [InlineData("WITH \"X\" AS (SELECT 1) SELECT * FROM \"X\"")]
+    [InlineData("WITH \"A\" AS (SELECT 1), \"B\" AS (SELECT 2) SELECT * FROM \"A\", \"B\"")]
+    [InlineData("WITH \"X\"(a) AS (SELECT 1 AS a) SELECT * FROM \"X\"")]
+    // Identifier with a digit (cte1) must be read as a whole name.
+    [InlineData("WITH cte1 AS (SELECT 1) SELECT * FROM cte1")]
     public void Validate_AllowedShapes_ReturnsNull(string sql)
     {
+        ReadOnlyStatementValidator.Validate(sql).Should().BeNull();
+    }
+
+    [Fact]
+    public void Validate_QuotedCteFromReportedRegression_ReturnsNull()
+    {
+        // The exact shape that was wrongly rejected in production: a quoted CTE
+        // name with an aggregate body and a quoted outer SELECT.
+        const string sql =
+            "WITH \"InvoiceSummary\" AS ( SELECT \"CustomerNumber\", SUM(\"Total\") AS \"TotalBilling\", "
+            + "COUNT(*) AS \"InvoiceCount\" FROM \"Invoices\" WHERE \"CompanyId\" = 1 GROUP BY \"CustomerNumber\" ) "
+            + "SELECT * FROM \"InvoiceSummary\" ORDER BY \"TotalBilling\" DESC LIMIT 5";
+
         ReadOnlyStatementValidator.Validate(sql).Should().BeNull();
     }
 
@@ -89,11 +109,31 @@ public class ReadOnlyStatementValidatorTests
         "WITH a AS (WITH b AS (UPDATE foo SET x=1) SELECT * FROM b) SELECT * FROM a",
         "UPDATE"
     )]
+    // Quoting the CTE name must not let a writable body slip past the recursive
+    // check — the security guarantee has to hold for the quoted-name branch too.
+    [InlineData(
+        "WITH \"x\" AS (INSERT INTO foo VALUES (1) RETURNING *) SELECT * FROM \"x\"",
+        "INSERT"
+    )]
+    // A digit-bearing CTE name must also still recurse into its body.
+    [InlineData("WITH cte1 AS (DELETE FROM foo RETURNING *) SELECT * FROM cte1", "DELETE")]
     public void Validate_WriteInsideCte_RejectedRecursively(string sql, string innerVerb)
     {
         var violation = ReadOnlyStatementValidator.Validate(sql);
         violation.Should().NotBeNull();
         violation.Should().Contain(innerVerb);
+    }
+
+    [Theory]
+    // Adversarial quoted-CTE-name shapes that must NOT slip a write past the
+    // whitelist or be silently accepted — they must all be rejected. These lock
+    // the read-only boundary against a future refactor of the identifier reader.
+    [InlineData("WITH \"x AS (INSERT INTO foo VALUES (1) RETURNING *) SELECT * FROM x")] // unterminated quoted name swallows the rest
+    [InlineData("WITH \"\" AS (INSERT INTO foo VALUES (1) RETURNING *) SELECT * FROM x")] // empty quoted name, writable body
+    [InlineData("WITH \"weird AS (\" AS (INSERT INTO foo VALUES (1)) SELECT 1")] // 'AS (' buried inside the quoted name
+    public void Validate_AdversarialQuotedCteName_IsRejected(string sql)
+    {
+        ReadOnlyStatementValidator.Validate(sql).Should().NotBeNull();
     }
 
     [Theory]

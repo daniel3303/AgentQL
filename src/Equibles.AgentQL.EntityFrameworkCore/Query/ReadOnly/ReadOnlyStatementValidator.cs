@@ -247,13 +247,42 @@ internal static class ReadOnlyStatementValidator
         return pos;
     }
 
+    // Reads the next identifier or keyword. Handles double-quoted identifiers
+    // (e.g. a CTE name like "InvoiceSummary") so the WITH walker advances past
+    // quoted names instead of rejecting the statement as malformed, and allows
+    // digits after the first character (a valid identifier like cte1). Returns
+    // null only when no identifier is present at the position.
+    //
+    // The quoted branch returns the unquoted inner text, so a quoted token whose
+    // inner text spells a keyword (e.g. "SELECT") does compare equal to it. That
+    // stays safe because the only place a quoted token can stand in for a verb is
+    // the start of a statement — invalid SQL, which the DB rejects — while in
+    // every CTE-name position the returned value is only used to confirm a name
+    // is present (the recursive write check on the CTE body is what enforces
+    // read-only, and it is unaffected by the name's text).
     private static string ReadIdentifier(string sql, int pos, out int after)
     {
         while (pos < sql.Length && char.IsWhiteSpace(sql[pos]))
             pos++;
+
+        if (pos < sql.Length && sql[pos] == '"')
+        {
+            // end is just past the closing quote; the inner text spans
+            // pos+1..end-2 with "" as an escaped quote. Return it (non-null) so
+            // the caller treats the quoted name as present, not missing.
+            var end = SkipQuoted(sql, pos, '"');
+            after = end;
+            var inner = sql.Substring(pos + 1, Math.Max(0, end - pos - 2)).Replace("\"\"", "\"");
+            return inner.Length > 0 ? inner : "\"";
+        }
+
         var start = pos;
-        while (pos < sql.Length && (char.IsLetter(sql[pos]) || sql[pos] == '_'))
+        if (pos < sql.Length && (char.IsLetter(sql[pos]) || sql[pos] == '_'))
+        {
             pos++;
+            while (pos < sql.Length && (char.IsLetterOrDigit(sql[pos]) || sql[pos] == '_'))
+                pos++;
+        }
         after = pos;
         return pos > start ? sql.Substring(start, pos - start) : null;
     }
