@@ -72,6 +72,11 @@ public class SchemaProvider<TContext> : ISchemaProvider
             .Any(e => e != null && !e.IsOwned() && ShouldIncludeEntity(e));
     }
 
+    private IEnumerable<IEntityType> GetNonOwnedEntityTypes()
+    {
+        return _context.Model.GetEntityTypes().Where(e => !e.IsOwned());
+    }
+
     private bool ShouldIncludeEntity(IEntityType entityType)
     {
         var clrType = entityType.ClrType;
@@ -461,10 +466,7 @@ public class SchemaProvider<TContext> : ISchemaProvider
     private List<string> AnalyzeInheritancePatterns()
     {
         var patterns = new List<string>();
-        var entityTypes = _context
-            .Model.GetEntityTypes()
-            .Where(e => !e.IsOwned() && ShouldIncludeEntity(e))
-            .ToList();
+        var entityTypes = GetNonOwnedEntityTypes().Where(e => ShouldIncludeEntity(e)).ToList();
 
         var tptHierarchies = new Dictionary<string, List<IEntityType>>();
         var tphTables = new Dictionary<string, List<IEntityType>>();
@@ -569,11 +571,9 @@ public class SchemaProvider<TContext> : ISchemaProvider
             }
         }
 
-        var derivedTypes = _context
-            .Model.GetEntityTypes()
+        var derivedTypes = GetNonOwnedEntityTypes()
             .Where(e =>
-                !e.IsOwned()
-                && e.BaseType?.GetTableName() == entityType.GetTableName()
+                e.BaseType?.GetTableName() == entityType.GetTableName()
                 && e.GetTableName() != entityType.GetTableName()
             )
             .ToList();
@@ -589,11 +589,8 @@ public class SchemaProvider<TContext> : ISchemaProvider
         {
             var discriminatorValue = entityType.GetDiscriminatorValue();
 
-            var entitiesInTable = _context
-                .Model.GetEntityTypes()
-                .Where(e =>
-                    !e.IsOwned() && e.GetTableName() == entityType.GetTableName() && e != entityType
-                )
+            var entitiesInTable = GetNonOwnedEntityTypes()
+                .Where(e => e.GetTableName() == entityType.GetTableName() && e != entityType)
                 .ToList();
 
             if (entitiesInTable.Any())
