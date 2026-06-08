@@ -42,6 +42,13 @@ jobs:
     permissions:
       contents: read
       id-token: write # Codecov tokenless auth via GitHub OIDC
+    env:
+      # The shared Docker Hub IP pool on hosted runners gets rate-limited and
+      # times out mid-pull, which previously failed the whole integration tier
+      # while Testcontainers fetched its Ryuk reaper sidecar. Runners are
+      # ephemeral, so the reaper's only job (cleaning up leaked containers) is
+      # redundant here — disabling it removes that image pull entirely.
+      TESTCONTAINERS_RYUK_DISABLED: "true"
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -55,6 +62,22 @@ jobs:
 
       - name: Build
         run: dotnet build -c Release --no-restore
+
+      # Pre-pull the only image the integration tier needs, with retries, so a
+      # transient Docker Hub timeout or rate-limit retries here instead of
+      # aborting the whole test run. Once it is in the local cache,
+      # Testcontainers reuses it without touching the registry.
+      - name: Pull integration test image
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if docker pull postgres:16-alpine; then
+              exit 0
+            fi
+            echo "docker pull failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          echo "::error::Could not pull postgres:16-alpine after 5 attempts."
+          exit 1
 
       # Unit + integration tiers only. The Playwright/functional tier is a
       # separate cadence (own workflow) per the testing standards: it needs
