@@ -357,13 +357,6 @@ Open `http://localhost:5143` in your browser. Configure your AI provider in `src
 }
 ```
 
-## Repository Layout
-
-```text
-src/    Equibles.AgentQL, .EntityFrameworkCore, .MicrosoftAI, .Demo
-tests/  Equibles.AgentQL.UnitTests, Equibles.AgentQL.IntegrationTests
-```
-
 ## Testing
 
 The solution uses xUnit v3 on the Microsoft Testing Platform (opted in via `global.json`).
