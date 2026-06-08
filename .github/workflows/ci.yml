@@ -106,4 +106,7 @@ jobs:
           use_oidc: true
           files: tests/**/TestResults/coverage.cobertura.xml
           disable_search: true
-          fail_ci_if_error: true
+          # Coverage upload is best-effort: Codecov-side outages (e.g. its
+          # uploader GPG-signature check failing with "No public key" when the
+          # keyserver is unreachable) must not fail an otherwise-green build.
+          fail_ci_if_error: false
