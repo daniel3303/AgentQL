@@ -121,4 +121,31 @@ public class QueryExecutorReadOnlyStatementWhitelistTests : IntegrationTestBase
 
         result.Success.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task Execute_QuotedCteName_ExecutesAndReturnsRows_NotNeutralized()
+    {
+        // A neutralized statement also returns Success=true with empty data, so
+        // asserting Success alone is not enough — this proves a double-quoted CTE
+        // name actually reaches the database and returns the seeded rows, rather
+        // than being silently rejected as "malformed".
+        const string sql =
+            "WITH \"DestinationTotals\" AS ( "
+            + "SELECT \"Destination\", COUNT(*) AS \"BookingCount\" FROM \"Bookings\" GROUP BY \"Destination\" ) "
+            + "SELECT * FROM \"DestinationTotals\" ORDER BY \"BookingCount\" DESC";
+
+        await using var context = Fixture.CreateContext();
+        var executor = new QueryExecutor<TravelTestDbContext>(
+            context,
+            new AgentQLOptions { ReadOnly = true },
+            NullLogger<QueryExecutor<TravelTestDbContext>>.Instance
+        );
+
+        var result = await executor.Execute(sql);
+
+        result.Success.Should().BeTrue(result.ErrorMessage);
+        result.Data.Should().NotBeEmpty();
+        // Seed has two Lisbon bookings and one Tokyo booking.
+        Convert.ToInt32(result.Data![0]["BookingCount"]).Should().Be(2);
+    }
 }
