@@ -13,8 +13,8 @@ namespace Equibles.AgentQL.MicrosoftAI;
 /// The underlying <c>FunctionInvokingChatClient</c> ends the tool loop the
 /// moment the model stops calling tools — including when it gives up with an
 /// empty message after a failed query. This client wraps that loop and inspects
-/// the terminal turn: if the model answered nothing, or stopped right after an
-/// <c>ExecuteQuery</c> error without retrying or calling <c>ReportFailure</c>,
+/// the terminal turn: if the model answered nothing, or stopped right after a
+/// query-execution error without retrying or calling <c>ReportFailure</c>,
 /// it injects a <c>&lt;system-reminder&gt;</c> message — restating the question
 /// and telling the model to read the error, fix the SQL and retry, or report a
 /// failure — then re-runs the loop, up to
@@ -30,6 +30,9 @@ namespace Equibles.AgentQL.MicrosoftAI;
 public class SelfCorrectingChatClient : DelegatingChatClient
 {
     public const string ExecuteQueryToolName = nameof(AgentQLPlugin.ExecuteQuery);
+    public const string ExecuteQueryWithDescriptionToolName = nameof(
+        AgentQLPlugin.ExecuteQueryWithDescription
+    );
     public const string ReportFailureToolName = nameof(AgentQLPlugin.ReportFailure);
 
     // Copied out of the options object so a singleton instance is never affected
@@ -96,8 +99,8 @@ public class SelfCorrectingChatClient : DelegatingChatClient
 
     /// <summary>
     /// A turn is unresolved when the agent stopped without a usable result: an
-    /// empty answer, or a non-empty answer when every <c>ExecuteQuery</c> the
-    /// agent ran errored (so the answer can't be grounded in data). If any query
+    /// empty answer, or a non-empty answer when every query execution (either
+    /// variant) errored (so the answer can't be grounded in data). If any query
     /// succeeded the answer is trusted, even if a later refining query failed. An
     /// explicit <c>ReportFailure</c> is a valid terminal and is always resolved.
     /// </summary>
@@ -134,7 +137,15 @@ public class SelfCorrectingChatClient : DelegatingChatClient
         var executeCallIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var call in messages.SelectMany(m => m.Contents).OfType<FunctionCallContent>())
         {
-            if (string.Equals(call.Name, ExecuteQueryToolName, StringComparison.Ordinal))
+            // Both execute variants ground an answer in data; hosts expose one or the other.
+            if (
+                string.Equals(call.Name, ExecuteQueryToolName, StringComparison.Ordinal)
+                || string.Equals(
+                    call.Name,
+                    ExecuteQueryWithDescriptionToolName,
+                    StringComparison.Ordinal
+                )
+            )
                 executeCallIds.Add(call.CallId);
         }
 
@@ -186,9 +197,9 @@ public class SelfCorrectingChatClient : DelegatingChatClient
         var reminder =
             "<system-reminder>\n"
             + "You ended your turn without answering and without reporting a failure.\n"
-            + "If your last ExecuteQuery call returned an error, read its ErrorMessage, "
+            + "If your last query execution returned an error, read its ErrorMessage, "
             + "call GetDatabaseSchema again if needed to verify the exact table and column "
-            + "names, fix the SQL, and call ExecuteQuery again.\n"
+            + "names, fix the SQL, and execute the query again.\n"
             + "If you have already tried several queries and none work, call ReportFailure "
             + "with a short reason.\n"
             + "Never reply with an empty message."

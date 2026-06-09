@@ -118,6 +118,68 @@ public class SelfCorrectingChatClientTests
     }
 
     [Fact]
+    public async Task GetResponse_DescribedQuerySucceeds_CountsAsGroundedAnswer()
+    {
+        var tools = new FakeQueryTools();
+        var scripted = new ScriptedChatClient([
+            ScriptedChatClient.ToolCall(
+                "ExecuteQueryWithDescription",
+                "c1",
+                new Dictionary<string, object>
+                {
+                    ["sqlQuery"] = "SELECT good",
+                    ["resultDescription"] = "Booking counts per destination",
+                }
+            ),
+            ScriptedChatClient.Say("DONE"),
+        ]);
+
+        var response = await Run(
+            BuildPipeline(scripted, new AgentQLSelfCorrectionOptions()),
+            tools.AsTools()
+        );
+
+        response.Text.Should().Be("DONE");
+        scripted.Reminders.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetResponse_DescribedQueryFails_StillNudgesToRetry()
+    {
+        var tools = new FakeQueryTools();
+        var scripted = new ScriptedChatClient([
+            ScriptedChatClient.ToolCall(
+                "ExecuteQueryWithDescription",
+                "c1",
+                new Dictionary<string, object>
+                {
+                    ["sqlQuery"] = "SELECT bad",
+                    ["resultDescription"] = "Booking counts",
+                }
+            ),
+            ScriptedChatClient.Say("I give up."),
+            ScriptedChatClient.ToolCall(
+                "ExecuteQueryWithDescription",
+                "c2",
+                new Dictionary<string, object>
+                {
+                    ["sqlQuery"] = "SELECT good",
+                    ["resultDescription"] = "Booking counts",
+                }
+            ),
+            ScriptedChatClient.Say("DONE"),
+        ]);
+
+        var response = await Run(
+            BuildPipeline(scripted, new AgentQLSelfCorrectionOptions()),
+            tools.AsTools()
+        );
+
+        response.Text.Should().Be("DONE");
+        scripted.Reminders.Should().HaveCount(1);
+    }
+
+    [Fact]
     public async Task GetResponse_AnswerGroundedInEarlierSuccess_NotNudgedByLaterFailedQuery()
     {
         var tools = new FakeQueryTools();

@@ -68,4 +68,90 @@ public class AgentQLPluginTests
         parsed["Success"]!.Value<bool>().Should().BeFalse();
         parsed["Reason"]!.Value<string>().Should().Be("no matching table");
     }
+
+    [Fact]
+    public async Task ExecuteQueryWithDescription_SerializesSameJsonAsExecuteQuery()
+    {
+        var data = new List<Dictionary<string, object>> { new() { ["Name"] = "Paris" } };
+        _queryExecutor
+            .Execute("SELECT Name FROM Destinations")
+            .Returns(QueryResult.FromSuccess(data, "SELECT Name FROM Destinations"));
+
+        var json = await _sut.ExecuteQueryWithDescription(
+            "SELECT Name FROM Destinations",
+            "Destination names"
+        );
+
+        var parsed = JObject.Parse(json);
+        parsed["Success"]!.Value<bool>().Should().BeTrue();
+        parsed["RowCount"]!.Value<int>().Should().Be(1);
+        parsed["Data"]![0]!["Name"]!.Value<string>().Should().Be("Paris");
+        // The description is for the host, not the model — it must not leak into the JSON.
+        json.Should().NotContain("Destination names");
+    }
+
+    [Fact]
+    public async Task ExecuteQueryWithDescription_RecordsCaptureWithDescription()
+    {
+        var data = new List<Dictionary<string, object>> { new() { ["Total"] = 5 } };
+        _queryExecutor
+            .Execute(Arg.Any<string>())
+            .Returns(QueryResult.FromSuccess(data, "SELECT 5"));
+
+        await _sut.ExecuteQueryWithDescription("SELECT 5", "Yearly totals, VAT excluded");
+
+        _sut.LastSuccessfulResult.Should().NotBeNull();
+        _sut.LastSuccessfulResult.Sql.Should().Be("SELECT 5");
+        _sut.LastSuccessfulResult.Description.Should().Be("Yearly totals, VAT excluded");
+        _sut.LastSuccessfulResult.RowCount.Should().Be(1);
+        _sut.LastSuccessfulResult.Data.Should().BeSameAs(data);
+    }
+
+    [Fact]
+    public async Task ExecuteQuery_RecordsCaptureWithoutDescription()
+    {
+        var data = new List<Dictionary<string, object>> { new() { ["Name"] = "Paris" } };
+        _queryExecutor
+            .Execute(Arg.Any<string>())
+            .Returns(QueryResult.FromSuccess(data, "SELECT Name"));
+
+        await _sut.ExecuteQuery("SELECT Name");
+
+        _sut.LastSuccessfulResult.Should().NotBeNull();
+        _sut.LastSuccessfulResult.Description.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ExecuteQuery_EmptyResultSet_StillRecordsCapture()
+    {
+        // Zero rows is a successful answer ("no data matches"), not a failure.
+        _queryExecutor
+            .Execute(Arg.Any<string>())
+            .Returns(QueryResult.FromSuccess([], "SELECT none"));
+
+        await _sut.ExecuteQuery("SELECT none");
+
+        _sut.LastSuccessfulResult.Should().NotBeNull();
+        _sut.LastSuccessfulResult.RowCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ExecuteQuery_FailedQuery_DoesNotOverwritePriorCapture()
+    {
+        var data = new List<Dictionary<string, object>> { new() { ["Name"] = "Paris" } };
+        _queryExecutor.Execute("SELECT good").Returns(QueryResult.FromSuccess(data, "SELECT good"));
+        _queryExecutor.Execute("SELECT bad").Returns(QueryResult.FromError("syntax error"));
+
+        await _sut.ExecuteQuery("SELECT good");
+        await _sut.ExecuteQuery("SELECT bad");
+
+        _sut.LastSuccessfulResult.Should().NotBeNull();
+        _sut.LastSuccessfulResult.Sql.Should().Be("SELECT good");
+    }
+
+    [Fact]
+    public void LastSuccessfulResult_BeforeAnyQuery_IsNull()
+    {
+        _sut.LastSuccessfulResult.Should().BeNull();
+    }
 }
