@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `AgentQLPlugin.ExecuteQueryWithDescription(sqlQuery, resultDescription)` — a
+  variant of `ExecuteQuery` where the model also supplies a short description of
+  the result set (column meanings, filters, caveats) in the same tool call. Hosts
+  that hand the raw rows to an orchestrator can skip the final prose-generation
+  turn entirely, cutting one model round-trip per question.
+- `AgentQLPlugin.LastSuccessfulResult` — per-scope capture of the last successful
+  query (`CapturedQueryResult`: SQL, rows, row count, optional description), so
+  hosts no longer need to wrap `ExecuteQuery` to harvest verified rows for charts
+  or structured replies. Failed queries never overwrite a prior capture; a
+  zero-row success is captured (it is an answer, not a failure).
+- `SelfCorrectingChatClient` recognises `ExecuteQueryWithDescription` as a
+  grounding query (new `ExecuteQueryWithDescriptionToolName` constant), so the
+  self-correction guard works identically with either execute variant.
+
+### Changed
+
+- `GetDatabaseSchema` workflow text and the self-correction reminder now refer to
+  "the query execution tool" generically instead of naming `ExecuteQuery`, since
+  hosts may expose either execute variant.
+
 ## [0.2.1] — 2026-06-08
 
 ### Fixed

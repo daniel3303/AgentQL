@@ -35,6 +35,15 @@ public sealed class FakeQueryTools
         );
     }
 
+    [Description("Executes a SQL query and describes the result rows")]
+    public string ExecuteQueryWithDescription(
+        [Description("The SQL query")] string sqlQuery,
+        [Description("What the rows are")] string resultDescription
+    )
+    {
+        return ExecuteQuery(sqlQuery);
+    }
+
     [Description("Reports a failure")]
     public string ReportFailure([Description("The reason")] string reason)
     {
@@ -47,6 +56,7 @@ public sealed class FakeQueryTools
     public IList<AITool> AsTools() =>
         [
             AIFunctionFactory.Create(ExecuteQuery),
+            AIFunctionFactory.Create(ExecuteQueryWithDescription),
             AIFunctionFactory.Create(ReportFailure),
             AIFunctionFactory.Create(GetDatabaseSchema),
         ];
